@@ -50,8 +50,8 @@ export class SceneManager {
     this.labelRenderer.domElement.style.left = '0'
     this.labelRenderer.domElement.style.pointerEvents = 'none'
 
-    container.appendChild(this.renderer.domElement)
     container.appendChild(this.labelRenderer.domElement)
+    container.appendChild(this.renderer.domElement)
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.controls.enableDamping = true

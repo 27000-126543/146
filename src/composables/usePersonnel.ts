@@ -1,8 +1,10 @@
+import { storeToRefs } from 'pinia'
 import { useHallStore } from '../store/hall'
 import type { Position3D } from '../types'
 
 export function usePersonnel() {
   const hallStore = useHallStore()
+  const { personnel, activeAlerts, areas, restrictedAreas } = storeToRefs(hallStore)
 
   const getRoleColor = (role: string): string => {
     const colors: Record<string, string> = {
@@ -28,10 +30,10 @@ export function usePersonnel() {
   }
 
   return {
-    personnel: hallStore.personnel,
-    activeAlerts: hallStore.activeAlerts,
-    areas: hallStore.areas,
-    restrictedAreas: hallStore.restrictedAreas,
+    personnel,
+    activeAlerts,
+    areas,
+    restrictedAreas,
     getRoleColor,
     getRoleName,
     getCurrentArea,

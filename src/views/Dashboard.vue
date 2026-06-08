@@ -9,11 +9,11 @@ import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 
-const auth = useAuth()
+const { userName, userRole, isLoggedIn, hasPermission, logout } = useAuth()
 const router = useRouter()
 
 onMounted(() => {
-  if (!auth.isLoggedIn.value) {
+  if (!isLoggedIn.value) {
     router.push('/login')
   }
 })
@@ -30,18 +30,18 @@ onMounted(() => {
       </div>
       <div class="flex items-center gap-4">
         <div class="text-sm text-gray-300">
-          当前用户：<span class="text-cyan-400 font-medium">{{ auth.userName }}</span>
-          <span class="ml-2 text-gray-500">({{ auth.userRole.value === 'window' ? '窗口人员' : auth.userRole.value === 'chief' ? '审批科长' : '中心领导' }})</span>
+          当前用户：<span class="text-cyan-400 font-medium">{{ userName }}</span>
+          <span class="ml-2 text-gray-500">({{ userRole === 'window' ? '窗口人员' : userRole === 'chief' ? '审批科长' : '中心领导' }})</span>
         </div>
         <button
-          v-if="auth.hasPermission(['chief', 'leader'])"
+          v-if="hasPermission(['chief', 'leader'])"
           @click="router.push('/statistics')"
           class="px-4 py-1.5 text-sm bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 rounded-lg transition-all border border-blue-500/30"
         >
           数据统计
         </button>
         <button
-          @click="auth.logout(); router.push('/login')"
+          @click="logout(); router.push('/login')"
           class="px-4 py-1.5 text-sm bg-red-600/30 hover:bg-red-600/50 text-red-300 rounded-lg transition-all border border-red-500/30"
         >
           退出登录

@@ -246,55 +246,55 @@ import { useEnvironment } from '../../composables/useEnvironment'
 const { environment, isTemperatureWarning, isHumidityWarning, isCo2Warning, hasWarning, getTemperatureStatus, getHumidityStatus, getCo2Status } = useEnvironment()
 
 const tempDashOffset = computed(() => {
-  const percent = (environment.temperature - 15) / 25
+  const percent = (environment.value.temperature - 15) / 25
   const clamped = Math.max(0, Math.min(1, percent))
   return 197.92 * (1 - clamped * 0.75)
 })
 
 const tempThresholdOffset = computed(() => {
-  const percent = (environment.thresholds.temperature - 15) / 25
+  const percent = (environment.value.thresholds.temperature - 15) / 25
   const clamped = Math.max(0, Math.min(1, percent))
   return 197.92 * (1 - clamped * 0.75)
 })
 
 const tempAngle = computed(() => {
-  const percent = (environment.temperature - 15) / 25
+  const percent = (environment.value.temperature - 15) / 25
   const clamped = Math.max(0, Math.min(1, percent))
   return clamped * 270 - 135
 })
 
 const humidityDashOffset = computed(() => {
-  const percent = (environment.humidity - 30) / 50
+  const percent = (environment.value.humidity - 30) / 50
   const clamped = Math.max(0, Math.min(1, percent))
   return 197.92 * (1 - clamped * 0.75)
 })
 
 const humidityThresholdOffset = computed(() => {
-  const percent = (environment.thresholds.humidity - 30) / 50
+  const percent = (environment.value.thresholds.humidity - 30) / 50
   const clamped = Math.max(0, Math.min(1, percent))
   return 197.92 * (1 - clamped * 0.75)
 })
 
 const humidityAngle = computed(() => {
-  const percent = (environment.humidity - 30) / 50
+  const percent = (environment.value.humidity - 30) / 50
   const clamped = Math.max(0, Math.min(1, percent))
   return clamped * 270 - 135
 })
 
 const co2DashOffset = computed(() => {
-  const percent = (environment.co2 - 400) / 1600
+  const percent = (environment.value.co2 - 400) / 1600
   const clamped = Math.max(0, Math.min(1, percent))
   return 197.92 * (1 - clamped * 0.75)
 })
 
 const co2ThresholdOffset = computed(() => {
-  const percent = (environment.thresholds.co2 - 400) / 1600
+  const percent = (environment.value.thresholds.co2 - 400) / 1600
   const clamped = Math.max(0, Math.min(1, percent))
   return 197.92 * (1 - clamped * 0.75)
 })
 
 const co2Angle = computed(() => {
-  const percent = (environment.co2 - 400) / 1600
+  const percent = (environment.value.co2 - 400) / 1600
   const clamped = Math.max(0, Math.min(1, percent))
   return clamped * 270 - 135
 })

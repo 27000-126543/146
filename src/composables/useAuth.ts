@@ -14,7 +14,7 @@ export function useAuth() {
     scanProgress.value = 0
 
     for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 80))
       scanProgress.value = i
     }
 

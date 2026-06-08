@@ -1,3 +1,4 @@
+import { storeToRefs } from 'pinia'
 import { useHallStore } from '../store/hall'
 import { useAuthStore } from '../store/auth'
 import { ElMessage } from 'element-plus'
@@ -5,6 +6,7 @@ import { ElMessage } from 'element-plus'
 export function useEmergency() {
   const hallStore = useHallStore()
   const authStore = useAuthStore()
+  const { emergencyActive, evacuationPaths } = storeToRefs(hallStore)
 
   const startEmergency = () => {
     if (!authStore.hasPermission('leader')) {
@@ -29,8 +31,8 @@ export function useEmergency() {
   }
 
   return {
-    emergencyActive: hallStore.emergencyActive,
-    evacuationPaths: hallStore.evacuationPaths,
+    emergencyActive,
+    evacuationPaths,
     startEmergency,
     stopEmergency
   }

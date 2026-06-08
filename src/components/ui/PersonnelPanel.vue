@@ -122,7 +122,7 @@ import { usePersonnel } from '../../composables/usePersonnel'
 
 const { personnel, activeAlerts, getRoleColor, getRoleName, getCurrentArea } = usePersonnel()
 
-const onDutyCount = computed(() => personnel.length)
+const onDutyCount = computed(() => personnel.value.length)
 
 const getRoleBgClass = (role: string): string => {
   const classes: Record<string, string> = {

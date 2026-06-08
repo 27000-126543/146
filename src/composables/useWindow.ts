@@ -1,8 +1,21 @@
+import { storeToRefs } from 'pinia'
 import { useWindowStore } from '../store/window'
 import type { BusinessType } from '../types'
 
 export function useWindow() {
   const windowStore = useWindowStore()
+  const {
+    windows,
+    selectedWindow,
+    guideLines,
+    autoAssignEnabled,
+    taxWindows,
+    socialWindows,
+    industryWindows,
+    activeWindows,
+    busyCount,
+    totalQueue
+  } = storeToRefs(windowStore)
 
   const assignAndGuide = (businessType: BusinessType) => {
     const assignedWindow = windowStore.assignWindow(businessType)
@@ -49,16 +62,16 @@ export function useWindow() {
   }
 
   return {
-    windows: windowStore.windows,
-    selectedWindow: windowStore.selectedWindow,
-    guideLines: windowStore.guideLines,
-    autoAssignEnabled: windowStore.autoAssignEnabled,
-    taxWindows: windowStore.taxWindows,
-    socialWindows: windowStore.socialWindows,
-    industryWindows: windowStore.industryWindows,
-    activeWindows: windowStore.activeWindows,
-    busyCount: windowStore.busyCount,
-    totalQueue: windowStore.totalQueue,
+    windows,
+    selectedWindow,
+    guideLines,
+    autoAssignEnabled,
+    taxWindows,
+    socialWindows,
+    industryWindows,
+    activeWindows,
+    busyCount,
+    totalQueue,
     selectWindow: windowStore.selectWindow,
     assignWindow: windowStore.assignWindow,
     assignAndGuide,

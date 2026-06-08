@@ -84,6 +84,7 @@
 
         <div class="flex gap-2">
           <el-button
+            v-if="hasPermission(['window', 'chief', 'leader'])"
             type="primary"
             class="flex-1 bg-blue-600 hover:bg-blue-500 border-none text-white shadow-lg shadow-blue-500/30"
             @click="handleCallNext"
@@ -93,6 +94,7 @@
             叫下一号
           </el-button>
           <el-button
+            v-if="hasPermission(['window', 'chief', 'leader'])"
             type="success"
             class="flex-1 bg-emerald-600 hover:bg-emerald-500 border-none text-white shadow-lg shadow-emerald-500/30"
             @click="handleSubmitMaterial"
@@ -112,30 +114,32 @@ import { LayoutDashboard, User, Users, Clock, BellRing, FileCheck, MousePointerC
 import { ElMessage } from 'element-plus'
 import { useWindow } from '../../composables/useWindow'
 import { useMaterial } from '../../composables/useMaterial'
+import { useAuth } from '../../composables/useAuth'
 
 const { selectedWindow, totalQueue, busyCount, formatDuration, getBusinessIcon, getStatusText, getStatusColor, callNextNumber } = useWindow()
 const { submitMaterial } = useMaterial()
+const { hasPermission } = useAuth()
 
 const statusClass = computed(() => {
-  if (!selectedWindow) return ''
+  if (!selectedWindow.value) return ''
   const colorMap: Record<string, string> = {
     idle: 'bg-green-500/20 text-green-400 border border-green-500/30',
     busy: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
     offline: 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
   }
-  return colorMap[selectedWindow.status] || colorMap.offline
+  return colorMap[selectedWindow.value.status] || colorMap.offline
 })
 
 const handleCallNext = () => {
-  if (selectedWindow) {
-    callNextNumber(selectedWindow.id)
-    ElMessage.success(`已叫号: ${selectedWindow.currentNumber}`)
+  if (selectedWindow.value) {
+    callNextNumber(selectedWindow.value.id)
+    ElMessage.success(`已叫号: ${selectedWindow.value.currentNumber}`)
   }
 }
 
 const handleSubmitMaterial = () => {
-  if (selectedWindow) {
-    const result = submitMaterial(selectedWindow.id, `${selectedWindow.businessName}申请材料`)
+  if (selectedWindow.value) {
+    const result = submitMaterial(selectedWindow.value.id, `${selectedWindow.value.businessName}申请材料`)
     if (result) {
       ElMessage.success('材料提交成功，审批流程已启动')
     }

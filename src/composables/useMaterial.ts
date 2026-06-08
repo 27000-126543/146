@@ -1,3 +1,4 @@
+import { storeToRefs } from 'pinia'
 import { useHallStore } from '../store/hall'
 import { useWindowStore } from '../store/window'
 import { useAuthStore } from '../store/auth'
@@ -6,6 +7,7 @@ export function useMaterial() {
   const hallStore = useHallStore()
   const windowStore = useWindowStore()
   const authStore = useAuthStore()
+  const { materialFlows, approvalProcesses } = storeToRefs(hallStore)
 
   const submitMaterial = (windowId: string, materialName: string) => {
     const window = windowStore.getWindowById(windowId)
@@ -64,8 +66,8 @@ export function useMaterial() {
   }
 
   return {
-    materialFlows: hallStore.materialFlows,
-    approvalProcesses: hallStore.approvalProcesses,
+    materialFlows,
+    approvalProcesses,
     submitMaterial,
     processNextStep,
     getStepColor,

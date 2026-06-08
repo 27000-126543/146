@@ -62,7 +62,7 @@ const updateTime = () => {
 }
 
 const handleBusinessAssign = (type: BusinessType) => {
-  if (!isLoggedIn) {
+  if (!isLoggedIn.value) {
     ElMessage.warning('请先登录')
     return
   }
@@ -115,7 +115,7 @@ const handleEmergency = async () => {
 }
 
 const handleClearGuideLines = () => {
-  if (guideLines.length === 0) {
+  if (guideLines.value.length === 0) {
     ElMessage.info('当前没有引导线可清除')
     return
   }
@@ -148,7 +148,7 @@ const getRoleText = computed(() => {
 })
 
 const activeGuideCount = computed(() => {
-  return guideLines.filter(g => g.active).length
+  return guideLines.value.filter(g => g.active).length
 })
 
 onMounted(() => {
