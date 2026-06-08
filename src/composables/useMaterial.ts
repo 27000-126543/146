@@ -2,6 +2,7 @@ import { storeToRefs } from 'pinia'
 import { useHallStore } from '../store/hall'
 import { useWindowStore } from '../store/window'
 import { useAuthStore } from '../store/auth'
+import type { ApprovalRecord } from '../types'
 
 export function useMaterial() {
   const hallStore = useHallStore()
@@ -75,6 +76,7 @@ export function useMaterial() {
     formatTime,
     createMaterialFlow: hallStore.createMaterialFlow,
     createApprovalProcess: hallStore.createApprovalProcess,
-    advanceApprovalStep: hallStore.advanceApprovalStep
+    advanceApprovalStep: hallStore.advanceApprovalStep,
+    loadApprovalsFromStorage: hallStore.loadApprovalsFromStorage
   }
 }

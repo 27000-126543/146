@@ -19,19 +19,35 @@
       <div
         v-for="process in approvalProcesses"
         :key="process.id"
-        class="bg-blue-900/30 rounded-xl p-4 border border-blue-500/20"
+        class="bg-blue-900/30 rounded-xl p-4 border transition-all"
+        :class="process.status === 'completed' ? 'border-green-500/30' : 'border-blue-500/20'"
       >
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <FileText class="w-4 h-4 text-blue-400" />
             <span class="text-blue-100 font-medium text-sm">{{ process.materialName }}</span>
           </div>
           <span
             class="px-2 py-0.5 rounded text-xs font-medium"
-            :class="process.currentStep >= 2 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'"
+            :class="process.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'"
           >
-            {{ process.currentStep >= 2 ? '已完成' : '审批中' }}
+            {{ process.status === 'completed' ? '已办结' : '审批中' }}
           </span>
+        </div>
+
+        <div class="flex items-center gap-4 mb-3 text-xs">
+          <div class="flex items-center gap-1 text-blue-400/70">
+            <Building2 class="w-3.5 h-3.5" />
+            <span>{{ process.windowNumber }}号窗口</span>
+          </div>
+          <div class="flex items-center gap-1 text-blue-400/70">
+            <User class="w-3.5 h-3.5" />
+            <span>{{ process.submitter }}</span>
+          </div>
+          <div v-if="process.status === 'completed' && process.completedTime" class="flex items-center gap-1 text-green-400/70">
+            <CheckCircle class="w-3.5 h-3.5" />
+            <span>{{ formatTime(process.completedTime) }} 办结</span>
+          </div>
         </div>
 
         <div class="relative pl-6">
@@ -89,11 +105,11 @@
 </template>
 
 <script setup lang="ts">
-import { ClipboardList, FileText, FileX, Check, Clock, User, ArrowRight } from 'lucide-vue-next'
+import { ClipboardList, FileText, FileX, Check, Clock, User, ArrowRight, Building2, CheckCircle } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
 import { useMaterial } from '../../composables/useMaterial'
 import { useAuth } from '../../composables/useAuth'
-import type { ApprovalProcess } from '../../types'
+import type { ApprovalRecord } from '../../types'
 
 const { approvalProcesses, processNextStep, getStepStatus, formatTime } = useMaterial()
 const { hasPermission } = useAuth()
@@ -125,7 +141,8 @@ const getStepBadgeClass = (status: string): string => {
   return classes[status] || classes.pending
 }
 
-const canAdvance = (process: ApprovalProcess): boolean => {
+const canAdvance = (process: ApprovalRecord): boolean => {
+  if (process.status === 'completed') return false
   const currentStepName = process.steps[process.currentStep]?.name
   if (currentStepName === '科室审核' && !hasPermission(['chief', 'leader'])) {
     return false

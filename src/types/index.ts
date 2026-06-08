@@ -155,3 +155,4 @@ export interface ApprovalRecord {
   startTime: Date
   completedTime?: Date
   status: 'processing' | 'completed'
+}

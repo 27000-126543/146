@@ -1,14 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { EnvironmentData, Personnel, MaterialFlow, EvacuationPath, Area, ApprovalProcess } from '../types'
-import { mockEnvironment, mockPersonnel, mockAreas, generateApprovalProcess } from '../mock/data'
+import type { EnvironmentData, Personnel, MaterialFlow, EvacuationPath, Area, ApprovalProcess, ApprovalRecord } from '../types'
+import { mockEnvironment, mockPersonnel, mockAreas, generateApprovalProcess, mockWindows } from '../mock/data'
+
+const APPROVAL_STORAGE_KEY = 'gov_hall_approvals'
 
 export const useHallStore = defineStore('hall', () => {
   const environment = ref<EnvironmentData>({ ...mockEnvironment })
   const personnel = ref<Personnel[]>([...mockPersonnel])
   const areas = ref<Area[]>([...mockAreas])
   const materialFlows = ref<MaterialFlow[]>([])
-  const approvalProcesses = ref<ApprovalProcess[]>([])
+  const approvalProcesses = ref<ApprovalRecord[]>([])
   const evacuationPaths = ref<EvacuationPath[]>([])
   const emergencyActive = ref(false)
   const fanParticles = ref<{ positions: number[]; active: boolean }>({ positions: [], active: false })
@@ -117,27 +119,79 @@ export const useHallStore = defineStore('hall', () => {
     return id
   }
 
-  const createApprovalProcess = (windowId: string, materialName: string) => {
-    const process = generateApprovalProcess(windowId, materialName)
-    approvalProcesses.value.unshift(process)
-    return process
+  const createApprovalProcess = (windowId: string, materialName: string, submitter: string = '办事群众') => {
+    const approvalProcess = generateApprovalProcess(windowId, materialName)
+    const window = mockWindows.find(w => w.id === windowId)
+    
+    const record: ApprovalRecord = {
+      id: approvalProcess.id,
+      materialId: approvalProcess.materialId,
+      materialName: approvalProcess.materialName,
+      submitter,
+      windowId,
+      windowNumber: window?.number || 0,
+      steps: approvalProcess.steps,
+      currentStep: approvalProcess.currentStep,
+      startTime: approvalProcess.startTime,
+      status: 'processing'
+    }
+    
+    approvalProcesses.value.unshift(record)
+    
+    if (approvalProcesses.value.length > 100) {
+      approvalProcesses.value = approvalProcesses.value.slice(0, 100)
+    }
+    
+    saveApprovalsToStorage()
+    return record
   }
 
   const advanceApprovalStep = (processId: string) => {
     const process = approvalProcesses.value.find(p => p.id === processId)
-    if (process && process.currentStep < 2) {
-      process.steps[process.currentStep].status = 'completed'
-      process.currentStep++
-      process.steps[process.currentStep].status = 'processing'
-      process.steps[process.currentStep].time = new Date()
-      if (process.currentStep === 1) {
-        process.steps[process.currentStep].operator = '周审批'
-      } else if (process.currentStep === 2) {
-        process.steps[process.currentStep].operator = '吴领导'
+    if (!process || process.currentStep >= 2) return
+    
+    process.steps[process.currentStep].status = 'completed'
+    process.currentStep++
+    process.steps[process.currentStep].status = 'processing'
+    process.steps[process.currentStep].time = new Date()
+    
+    if (process.currentStep === 1) {
+      process.steps[process.currentStep].operator = '周审批'
+    } else if (process.currentStep === 2) {
+      process.steps[process.currentStep].operator = '吴领导'
+      process.steps[2].status = 'completed'
+      process.status = 'completed'
+      process.completedTime = new Date()
+    }
+    
+    saveApprovalsToStorage()
+  }
+
+  const saveApprovalsToStorage = () => {
+    try {
+      localStorage.setItem(APPROVAL_STORAGE_KEY, JSON.stringify(approvalProcesses.value))
+    } catch (e) {
+      console.error('保存审批记录失败:', e)
+    }
+  }
+
+  const loadApprovalsFromStorage = () => {
+    try {
+      const stored = localStorage.getItem(APPROVAL_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        approvalProcesses.value = parsed.map((r: ApprovalRecord) => ({
+          ...r,
+          startTime: new Date(r.startTime),
+          completedTime: r.completedTime ? new Date(r.completedTime) : undefined,
+          steps: r.steps.map(s => ({
+            ...s,
+            time: new Date(s.time)
+          }))
+        }))
       }
-      if (process.currentStep >= 2) {
-        process.steps[2].status = 'completed'
-      }
+    } catch (e) {
+      console.error('加载审批记录失败:', e)
     }
   }
 
@@ -219,6 +273,8 @@ export const useHallStore = defineStore('hall', () => {
     createMaterialFlow,
     createApprovalProcess,
     advanceApprovalStep,
+    saveApprovalsToStorage,
+    loadApprovalsFromStorage,
     startEmergency,
     stopEmergency,
     updateFanParticles,

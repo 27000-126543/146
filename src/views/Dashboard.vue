@@ -8,11 +8,13 @@ import AssignmentPanel from '@/components/ui/AssignmentPanel.vue'
 import ControlBar from '@/components/ui/ControlBar.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useWindow } from '@/composables/useWindow'
+import { useMaterial } from '@/composables/useMaterial'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 
 const { userName, userRole, isLoggedIn, hasPermission, logout } = useAuth()
 const { loadAssignmentsFromStorage } = useWindow()
+const { loadApprovalsFromStorage } = useMaterial()
 const router = useRouter()
 
 onMounted(() => {
@@ -20,6 +22,7 @@ onMounted(() => {
     router.push('/login')
   }
   loadAssignmentsFromStorage()
+  loadApprovalsFromStorage()
 })
 </script>
 
