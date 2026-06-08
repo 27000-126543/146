@@ -31,7 +31,7 @@ const {
 } = useWindow()
 
 const { emergencyActive, startEmergency, stopEmergency } = useEmergency()
-const { currentUser, isLoggedIn, logout, hasPermission } = useAuth()
+const { currentUser, isLoggedIn, userRole, logout, hasPermission } = useAuth()
 const {
   environment,
   hasWarning,
@@ -87,30 +87,23 @@ const handleEmergency = async () => {
   if (emergencyActive) {
     try {
       await ElMessageBox.confirm('确认解除应急疏散状态？', '提示', {
-        confirmButtonText: '确认',
+        confirmButtonText: '确认解除',
         cancelButtonText: '取消',
         type: 'warning'
       })
       stopEmergency()
+      ElMessage.success('应急疏散状态已解除')
     } catch {
       // 用户取消
     }
   } else {
-    try {
-      await ElMessageBox.confirm(
-        '确认启动应急疏散系统？所有人员将按照指引撤离！',
-        '紧急提示',
-        {
-          confirmButtonText: '立即启动',
-          cancelButtonText: '取消',
-          type: 'error',
-          confirmButtonClass: 'el-button--danger'
-        }
-      )
-      startEmergency()
-    } catch {
-      // 用户取消
-    }
+    startEmergency()
+    ElMessage({
+      message: '应急疏散系统已启动！请所有人员按照指引撤离！',
+      type: 'error',
+      duration: 5000,
+      showClose: true
+    })
   }
 }
 
@@ -252,7 +245,7 @@ onUnmounted(() => {
       <!-- 中间：快速操作区（按角色显示） -->
       <div class="flex items-center gap-4">
         <!-- 窗口人员操作区 -->
-        <template v-if="hasPermission('window')">
+        <template v-if="userRole === 'window'">
           <div
             class="flex items-center gap-2 px-4 py-2 rounded-xl"
             :class="
@@ -338,7 +331,7 @@ onUnmounted(() => {
         </template>
 
         <!-- 科长操作区 -->
-        <template v-else-if="hasPermission('chief')">
+        <template v-else-if="userRole === 'chief'">
           <div
             class="flex items-center gap-2 px-4 py-2 rounded-xl"
             :class="
@@ -424,7 +417,7 @@ onUnmounted(() => {
         </template>
 
         <!-- 领导操作区 -->
-        <template v-else-if="hasPermission('leader')">
+        <template v-else-if="userRole === 'leader'">
           <div
             class="flex items-center gap-2 px-4 py-2 rounded-xl"
             :class="

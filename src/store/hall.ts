@@ -146,22 +146,32 @@ export const useHallStore = defineStore('hall', () => {
     return record
   }
 
-  const advanceApprovalStep = (processId: string) => {
+  const advanceApprovalStep = (processId: string, operatorName: string = '') => {
     const process = approvalProcesses.value.find(p => p.id === processId)
-    if (!process || process.currentStep >= 2) return
+    if (!process || process.currentStep >= 2 || process.status === 'completed') return
     
-    process.steps[process.currentStep].status = 'completed'
+    const now = new Date()
+    const prevStep = process.steps[process.currentStep]
+    prevStep.status = 'completed'
+    prevStep.duration = Math.floor((now.getTime() - new Date(prevStep.time).getTime()) / 60000)
+    
     process.currentStep++
-    process.steps[process.currentStep].status = 'processing'
-    process.steps[process.currentStep].time = new Date()
-    
-    if (process.currentStep === 1) {
-      process.steps[process.currentStep].operator = '周审批'
+    const currentStep = process.steps[process.currentStep]
+    currentStep.status = 'processing'
+    currentStep.time = now
+    if (operatorName) {
+      currentStep.operator = operatorName
+    } else if (process.currentStep === 1) {
+      currentStep.operator = '周审批'
     } else if (process.currentStep === 2) {
-      process.steps[process.currentStep].operator = '吴领导'
+      currentStep.operator = '吴领导'
+    }
+    
+    if (process.currentStep >= 2) {
       process.steps[2].status = 'completed'
+      process.steps[2].duration = 0
       process.status = 'completed'
-      process.completedTime = new Date()
+      process.completedTime = now
     }
     
     saveApprovalsToStorage()

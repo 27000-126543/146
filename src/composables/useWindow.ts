@@ -96,6 +96,8 @@ export function useWindow() {
     getStatusColor,
     getStatusText,
     calculateWaitTime: windowStore.calculateWaitTime,
+    getAvailableWindowsForReassign: windowStore.getAvailableWindowsForReassign,
+    reassignWindow: windowStore.reassignWindow,
     loadAssignmentsFromStorage: windowStore.loadAssignmentsFromStorage
   }
 }

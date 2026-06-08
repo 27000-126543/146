@@ -1,8 +1,10 @@
 export type BusinessType = 'tax' | 'social' | 'industry'
 export type WindowStatus = 'idle' | 'busy' | 'offline'
-export type StepStatus = 'pending' | 'processing' | 'completed'
+export type StepStatus = 'pending' | 'processing' | 'completed' | 'rejected'
 export type StepName = '窗口受理' | '科室审核' | '领导签批'
 export type UserRole = 'window' | 'chief' | 'leader'
+export type ReassignReason = 'window_busy' | 'staff_absent' | 'business_specialty' | 'other'
+export type TodoStatus = 'normal' | 'warning' | 'overdue'
 
 export interface Position3D {
   x: number
@@ -29,6 +31,34 @@ export interface ApprovalStep {
   status: StepStatus
   operator: string
   time: Date
+  duration?: number
+  opinion?: string
+  rejectReason?: string
+}
+
+export interface RejectRecord {
+  fromStep: StepName
+  toStep: StepName
+  operator: string
+  reason: string
+  time: Date
+  opinion?: string
+}
+
+export type TodoType = 'call_next' | 'submit_material' | 'review' | 'sign' | 'warning' | 'emergency'
+
+export interface TodoItem {
+  id: string
+  type: TodoType
+  title: string
+  description: string
+  priority: 'high' | 'medium' | 'low'
+  targetId: string
+  targetType: 'window' | 'approval' | 'environment'
+  time: Date
+  todoStatus?: TodoStatus
+  deadline?: Date
+  waitHours?: number
 }
 
 export interface ApprovalProcess {
@@ -141,6 +171,9 @@ export interface AssignmentRecord {
   queueCount: number
   estimatedWaitTime: number
   assignTime: Date
+  assignType: 'auto' | 'manual'
+  previousWindowId?: string
+  previousWindowNumber?: number
 }
 
 export interface ApprovalRecord {

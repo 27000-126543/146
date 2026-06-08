@@ -26,7 +26,7 @@ export function useMaterial() {
     return process
   }
 
-  const processNextStep = (processId: string) => {
+  const processNextStep = (processId: string, operatorName: string = '') => {
     const process = hallStore.approvalProcesses.find(p => p.id === processId)
     if (!process) return
 
@@ -38,7 +38,7 @@ export function useMaterial() {
       return
     }
 
-    hallStore.advanceApprovalStep(processId)
+    hallStore.advanceApprovalStep(processId, operatorName)
     authStore.addLog('approval_step', `审批流程: ${process.materialName}，推进到下一步`)
   }
 

@@ -5,6 +5,7 @@ import ApprovalPanel from '@/components/ui/ApprovalPanel.vue'
 import EnvironmentPanel from '@/components/ui/EnvironmentPanel.vue'
 import PersonnelPanel from '@/components/ui/PersonnelPanel.vue'
 import AssignmentPanel from '@/components/ui/AssignmentPanel.vue'
+import TodoCenter from '@/components/ui/TodoCenter.vue'
 import ControlBar from '@/components/ui/ControlBar.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useWindow } from '@/composables/useWindow'
@@ -58,8 +59,8 @@ onMounted(() => {
 
     <ThreeScene />
 
-    <div class="absolute top-16 left-4 z-10 w-80">
-      <ApprovalPanel />
+    <div class="absolute top-16 left-4 z-10 w-96">
+      <TodoCenter />
     </div>
 
     <div class="absolute top-16 right-4 z-10 w-80">
@@ -70,12 +71,16 @@ onMounted(() => {
       <AssignmentPanel />
     </div>
 
-    <div class="absolute bottom-24 left-4 z-10 w-72">
-      <EnvironmentPanel />
+    <div class="absolute left-4 z-10 w-96" style="top: 420px;">
+      <ApprovalPanel />
     </div>
 
     <div class="absolute bottom-24 right-4 z-10 w-72">
       <PersonnelPanel />
+    </div>
+
+    <div class="absolute bottom-24 left-4 z-10 w-72">
+      <EnvironmentPanel />
     </div>
 
     <ControlBar />

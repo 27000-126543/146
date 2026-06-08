@@ -118,7 +118,9 @@ export const useWindowStore = defineStore('window', () => {
 
   const addAssignmentRecord = (
     businessType: BusinessType,
-    windowInfo: WindowInfo
+    windowInfo: WindowInfo,
+    assignType: 'auto' | 'manual' = 'auto',
+    previousWindow: WindowInfo | null = null
   ): AssignmentRecord => {
     const businessNames: Record<BusinessType, string> = {
       tax: '税务',
@@ -134,7 +136,10 @@ export const useWindowStore = defineStore('window', () => {
       windowNumber: windowInfo.number,
       queueCount: windowInfo.queueCount,
       estimatedWaitTime: calculateWaitTime(windowInfo.queueCount),
-      assignTime: new Date()
+      assignTime: new Date(),
+      assignType,
+      previousWindowId: previousWindow?.id,
+      previousWindowNumber: previousWindow?.number
     }
     
     assignmentRecords.value.unshift(record)
@@ -146,6 +151,43 @@ export const useWindowStore = defineStore('window', () => {
     
     saveAssignmentsToStorage()
     return record
+  }
+
+  const getAvailableWindowsForReassign = (businessType: BusinessType, excludeWindowId?: string): WindowInfo[] => {
+    return windows.value.filter(
+      w => w.businessType === businessType && 
+           w.status !== 'offline' && 
+           w.id !== excludeWindowId
+    )
+  }
+
+  const reassignWindow = (
+    assignmentId: string,
+    newWindowId: string
+  ): AssignmentRecord | null => {
+    const record = assignmentRecords.value.find(r => r.id === assignmentId)
+    if (!record) return null
+
+    const newWindow = getWindowById(newWindowId)
+    if (!newWindow || newWindow.businessType !== record.businessType) return null
+
+    const oldWindow = getWindowById(record.windowId)
+
+    clearGuideLines()
+
+    createGuideLine(
+      { x: 0, y: 0.1, z: 0 },
+      { x: newWindow.position.x, y: 0.1, z: newWindow.position.z + 2 }
+    )
+
+    const newRecord = addAssignmentRecord(
+      record.businessType,
+      newWindow,
+      'manual',
+      oldWindow
+    )
+
+    return newRecord
   }
 
   const saveAssignmentsToStorage = () => {
@@ -196,6 +238,8 @@ export const useWindowStore = defineStore('window', () => {
     updateAvgWaitTime,
     calculateWaitTime,
     addAssignmentRecord,
+    getAvailableWindowsForReassign,
+    reassignWindow,
     loadAssignmentsFromStorage,
     saveAssignmentsToStorage
   }

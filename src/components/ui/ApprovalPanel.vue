@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed left-4 top-24 w-96 rounded-2xl backdrop-blur-xl bg-blue-950/40 border border-blue-500/30 shadow-lg shadow-blue-500/20 overflow-hidden max-h-[calc(100vh-200px)] flex flex-col"
+    class="w-full rounded-2xl backdrop-blur-xl bg-blue-950/40 border border-blue-500/30 shadow-lg shadow-blue-500/20 overflow-hidden max-h-[calc(100vh-480px)] flex flex-col"
   >
     <div class="p-5 border-b border-blue-500/20">
       <h3 class="text-lg font-bold text-blue-100 flex items-center gap-2">
@@ -67,25 +67,31 @@
             </div>
 
             <div class="bg-blue-950/50 rounded-lg p-3 ml-2" :class="{ 'border border-blue-500/30': step.status === 'processing' }">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-sm font-medium" :class="getStepTextClass(step.status)">
-                  {{ step.name }}
-                </span>
-                <span class="text-xs px-2 py-0.5 rounded" :class="getStepBadgeClass(step.status)">
-                  {{ getStepStatus(step.status) }}
-                </span>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-medium" :class="getStepTextClass(step.status)">
+                    {{ step.name }}
+                  </span>
+                  <span class="text-xs px-2 py-0.5 rounded" :class="getStepBadgeClass(step.status)">
+                    {{ getStepStatus(step.status) }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="text-blue-400/70 flex items-center gap-1">
+                    <User class="w-3 h-3" />
+                    {{ step.operator || '待分配' }}
+                  </span>
+                  <span class="text-blue-400/50 flex items-center gap-1">
+                    <Clock class="w-3 h-3" />
+                    {{ formatFullTime(step.time) }}
+                  </span>
+                </div>
+                <div v-if="step.duration !== undefined && step.status === 'completed'" class="text-xs">
+                  <span class="text-green-400/70 flex items-center gap-1">
+                    <Timer class="w-3 h-3" />
+                    耗时 {{ formatDuration(step.duration) }}
+                  </span>
+                </div>
               </div>
-              <div class="flex items-center justify-between text-xs">
-                <span class="text-blue-400/70 flex items-center gap-1">
-                  <User class="w-3 h-3" />
-                  {{ step.operator || '待分配' }}
-                </span>
-                <span class="text-blue-400/50 flex items-center gap-1">
-                  <Clock class="w-3 h-3" />
-                  {{ formatTime(step.time) }}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -105,14 +111,14 @@
 </template>
 
 <script setup lang="ts">
-import { ClipboardList, FileText, FileX, Check, Clock, User, ArrowRight, Building2, CheckCircle } from 'lucide-vue-next'
+import { ClipboardList, FileText, FileX, Check, Clock, User, ArrowRight, Building2, CheckCircle, Timer } from 'lucide-vue-next'
 import { ElMessage } from 'element-plus'
 import { useMaterial } from '../../composables/useMaterial'
 import { useAuth } from '../../composables/useAuth'
 import type { ApprovalRecord } from '../../types'
 
-const { approvalProcesses, processNextStep, getStepStatus, formatTime } = useMaterial()
-const { hasPermission } = useAuth()
+const { approvalProcesses, processNextStep, getStepStatus } = useMaterial()
+const { hasPermission, currentUser } = useAuth()
 
 const getStepDotClass = (status: string): string => {
   const classes: Record<string, string> = {
@@ -141,6 +147,34 @@ const getStepBadgeClass = (status: string): string => {
   return classes[status] || classes.pending
 }
 
+const formatFullTime = (date: Date): string => {
+  if (!date) return '--:--'
+  const d = new Date(date)
+  return d.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
+const formatTime = (date: Date): string => {
+  if (!date) return '--:--'
+  const d = new Date(date)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+const formatDuration = (minutes: number): string => {
+  if (minutes === undefined || minutes === null) return '--'
+  if (minutes < 1) return '< 1分钟'
+  if (minutes < 60) return `${minutes}分钟`
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  if (mins === 0) return `${hours}小时`
+  return `${hours}小时${mins}分钟`
+}
+
 const canAdvance = (process: ApprovalRecord): boolean => {
   if (process.status === 'completed') return false
   const currentStepName = process.steps[process.currentStep]?.name
@@ -154,7 +188,8 @@ const canAdvance = (process: ApprovalRecord): boolean => {
 }
 
 const handleAdvance = (processId: string) => {
-  processNextStep(processId)
+  const operatorName = currentUser.value?.name || ''
+  processNextStep(processId, operatorName)
   ElMessage.success('审批已推进到下一步')
 }
 </script>
