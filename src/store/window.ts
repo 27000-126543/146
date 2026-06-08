@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { WindowInfo, BusinessType, GuideLine, Position3D, AssignmentRecord } from '../types'
+import type { WindowInfo, BusinessType, GuideLine, AssignmentRecord, ReassignReason, UserRole, Position3D } from '../types'
 import { mockWindows } from '../mock/data'
 
 const ASSIGNMENT_STORAGE_KEY = 'gov_hall_assignments'
@@ -163,7 +163,11 @@ export const useWindowStore = defineStore('window', () => {
 
   const reassignWindow = (
     assignmentId: string,
-    newWindowId: string
+    newWindowId: string,
+    reason: ReassignReason,
+    remark: string = '',
+    operatorName: string = '',
+    operatorRole: UserRole = 'window'
   ): AssignmentRecord | null => {
     const record = assignmentRecords.value.find(r => r.id === assignmentId)
     if (!record) return null
@@ -180,13 +184,34 @@ export const useWindowStore = defineStore('window', () => {
       { x: newWindow.position.x, y: 0.1, z: newWindow.position.z + 2 }
     )
 
-    const newRecord = addAssignmentRecord(
-      record.businessType,
-      newWindow,
-      'manual',
-      oldWindow
-    )
+    const estimatedWaitTime = calculateWaitTime(newWindow.queueCount)
 
+    const newRecord: AssignmentRecord = {
+      id: `assign_${Date.now()}`,
+      businessType: record.businessType,
+      businessName: record.businessName,
+      windowId: newWindow.id,
+      windowNumber: newWindow.number,
+      queueCount: newWindow.queueCount,
+      estimatedWaitTime,
+      assignTime: new Date(),
+      assignType: 'manual',
+      previousWindowId: oldWindow?.id,
+      previousWindowNumber: oldWindow?.number,
+      reassignReason: reason,
+      reassignRemark: remark,
+      operatorName,
+      operatorRole
+    }
+
+    assignmentRecords.value.unshift(newRecord)
+    latestAssignment.value = newRecord
+
+    if (assignmentRecords.value.length > 50) {
+      assignmentRecords.value = assignmentRecords.value.slice(0, 50)
+    }
+
+    saveAssignmentsToStorage()
     return newRecord
   }
 

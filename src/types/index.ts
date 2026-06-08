@@ -174,6 +174,10 @@ export interface AssignmentRecord {
   assignType: 'auto' | 'manual'
   previousWindowId?: string
   previousWindowNumber?: number
+  reassignReason?: ReassignReason
+  reassignRemark?: string
+  operatorName?: string
+  operatorRole?: UserRole
 }
 
 export interface ApprovalRecord {
@@ -188,4 +192,5 @@ export interface ApprovalRecord {
   startTime: Date
   completedTime?: Date
   status: 'processing' | 'completed'
+  rejectHistory?: RejectRecord[]
 }

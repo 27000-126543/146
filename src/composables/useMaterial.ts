@@ -26,7 +26,7 @@ export function useMaterial() {
     return process
   }
 
-  const processNextStep = (processId: string, operatorName: string = '') => {
+  const processNextStep = (processId: string, operatorName: string = '', opinion: string = '') => {
     const process = hallStore.approvalProcesses.find(p => p.id === processId)
     if (!process) return
 
@@ -38,8 +38,26 @@ export function useMaterial() {
       return
     }
 
-    hallStore.advanceApprovalStep(processId, operatorName)
+    const operatorRole = authStore.currentUser?.role || 'window'
+    hallStore.advanceApprovalStep(processId, operatorName, opinion, operatorRole)
     authStore.addLog('approval_step', `审批流程: ${process.materialName}，推进到下一步`)
+  }
+
+  const rejectStep = (processId: string, operatorName: string = '', reason: string = '', opinion: string = '') => {
+    const process = hallStore.approvalProcesses.find(p => p.id === processId)
+    if (!process) return
+
+    const currentStepName = process.steps[process.currentStep]?.name
+    if (currentStepName === '科室审核' && !authStore.hasPermission(['chief', 'leader'])) {
+      return
+    }
+    if (currentStepName === '领导签批' && !authStore.hasPermission('leader')) {
+      return
+    }
+
+    const operatorRole = authStore.currentUser?.role || 'window'
+    hallStore.rejectApprovalStep(processId, operatorName, reason, opinion, operatorRole)
+    authStore.addLog('approval_reject', `审批流程: ${process.materialName}，退回原因: ${reason}`)
   }
 
   const getStepColor = (status: string): string => {
@@ -55,7 +73,8 @@ export function useMaterial() {
     const texts: Record<string, string> = {
       completed: '已完成',
       processing: '进行中',
-      pending: '待处理'
+      pending: '待处理',
+      rejected: '已退回'
     }
     return texts[status] || '未知'
   }
@@ -71,12 +90,14 @@ export function useMaterial() {
     approvalProcesses,
     submitMaterial,
     processNextStep,
+    rejectStep,
     getStepColor,
     getStepStatus,
     formatTime,
     createMaterialFlow: hallStore.createMaterialFlow,
     createApprovalProcess: hallStore.createApprovalProcess,
     advanceApprovalStep: hallStore.advanceApprovalStep,
+    rejectApprovalStep: hallStore.rejectApprovalStep,
     loadApprovalsFromStorage: hallStore.loadApprovalsFromStorage
   }
 }

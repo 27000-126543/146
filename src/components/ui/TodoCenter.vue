@@ -7,27 +7,57 @@
         <ListTodo class="w-5 h-5 text-purple-400" />
         待办中心
       </h3>
-      <span
-        v-if="pendingTodos.length > 0"
-        class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30"
+      <div class="flex items-center gap-2">
+        <span
+          v-if="overdueTodos.length > 0"
+          class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30"
+        >
+          督办 {{ overdueTodos.length }}
+        </span>
+        <span
+          v-if="warningTodos.length > 0"
+          class="px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+        >
+          预警 {{ warningTodos.length }}
+        </span>
+        <span
+          v-if="normalTodos.length > 0"
+          class="px-2 py-0.5 rounded-full text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/30"
+        >
+          正常 {{ normalTodos.length }}
+        </span>
+      </div>
+    </div>
+
+    <div class="flex border-b border-purple-500/20">
+      <button
+        v-for="tab in tabs"
+        :key="tab.key"
+        class="flex-1 py-2 px-3 text-xs font-medium transition-all"
+        :class="activeTab === tab.key 
+          ? 'text-purple-300 border-b-2 border-purple-400 bg-purple-900/30' 
+          : 'text-purple-400/60 hover:text-purple-300 hover:bg-purple-900/20'"
+        @click="activeTab = tab.key"
       >
-        {{ pendingTodos.length }}
-      </span>
+        <component :is="tab.icon" class="w-3.5 h-3.5 inline mr-1" />
+        {{ tab.label }}
+        <span v-if="tab.count > 0" class="ml-1">({{ tab.count }})</span>
+      </button>
     </div>
 
     <div class="flex-1 overflow-y-auto p-5 space-y-3">
-      <!-- 窗口人员待办 -->
-      <template v-if="userRole === 'window'">
-        <div v-if="windowTodos.length === 0" class="text-center py-8">
+      <template v-if="activeTab === 'all'">
+        <div v-if="displayedTodos.length === 0" class="text-center py-8">
           <CheckCircle2 class="w-12 h-12 text-green-500/50 mx-auto mb-3" />
           <p class="text-green-300/60 text-sm">暂无待办事项</p>
-          <p class="text-green-300/40 text-xs mt-1">当前工作状态良好</p>
+          <p class="text-green-300/40 text-xs mt-1">{{ getEmptyText() }}</p>
         </div>
 
         <div
-          v-for="todo in windowTodos"
+          v-for="todo in displayedTodos"
           :key="todo.id"
-          class="bg-purple-900/30 rounded-xl p-4 border border-purple-500/20 hover:bg-purple-800/30 transition-all cursor-pointer group"
+          class="bg-purple-900/30 rounded-xl p-4 border transition-all cursor-pointer group"
+          :class="getTodoCardClass(todo)"
           @click="handleTodoClick(todo)"
         >
           <div class="flex items-start gap-3">
@@ -41,6 +71,19 @@
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-purple-100 font-medium text-sm">{{ todo.title }}</span>
                 <span
+                  v-if="todo.todoStatus === 'overdue'"
+                  class="px-1.5 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse"
+                >
+                  已超时
+                </span>
+                <span
+                  v-else-if="todo.todoStatus === 'warning'"
+                  class="px-1.5 py-0.5 rounded text-xs font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                >
+                  临超时
+                </span>
+                <span
+                  v-else
                   class="px-1.5 py-0.5 rounded text-xs font-medium"
                   :class="getPriorityClass(todo.priority)"
                 >
@@ -52,6 +95,10 @@
                 <span class="text-purple-500/50 flex items-center gap-1">
                   <Clock class="w-3 h-3" />
                   {{ formatTime(todo.time) }}
+                </span>
+                <span v-if="todo.waitHours !== undefined" class="text-purple-500/50 flex items-center gap-1">
+                  <Timer class="w-3 h-3" />
+                  已等待 {{ formatWaitHours(todo.waitHours) }}
                 </span>
                 <span class="text-purple-400/50 group-hover:text-purple-300 transition-colors flex items-center gap-1">
                   <ArrowRight class="w-3 h-3" />
@@ -63,47 +110,43 @@
         </div>
       </template>
 
-      <!-- 科长待办 -->
-      <template v-else-if="userRole === 'chief'">
-        <div v-if="chiefTodos.length === 0" class="text-center py-8">
+      <template v-else-if="activeTab === 'overdue'">
+        <div v-if="overdueTodos.length === 0" class="text-center py-8">
           <CheckCircle2 class="w-12 h-12 text-green-500/50 mx-auto mb-3" />
-          <p class="text-green-300/60 text-sm">暂无待办事项</p>
-          <p class="text-green-300/40 text-xs mt-1">审批工作已全部完成</p>
+          <p class="text-green-300/60 text-sm">暂无超督办事项</p>
+          <p class="text-green-300/40 text-xs mt-1">所有待办均在时限内</p>
         </div>
 
         <div
-          v-for="todo in chiefTodos"
+          v-for="todo in overdueTodos"
           :key="todo.id"
-          class="bg-purple-900/30 rounded-xl p-4 border transition-all cursor-pointer group"
-          :class="todo.priority === 'high' ? 'border-red-500/30 bg-red-900/20' : 'border-purple-500/20 hover:bg-purple-800/30'"
+          class="bg-red-900/30 rounded-xl p-4 border border-red-500/30 transition-all cursor-pointer group animate-pulse"
           @click="handleTodoClick(todo)"
         >
           <div class="flex items-start gap-3">
-            <div
-              class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-              :class="getTodoIconClass(todo.type)"
-            >
-              <component :is="getTodoIcon(todo.type)" class="w-5 h-5" />
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-red-500/20 text-red-400">
+              <Siren class="w-5 h-5" />
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-purple-100 font-medium text-sm">{{ todo.title }}</span>
-                <span
-                  class="px-1.5 py-0.5 rounded text-xs font-medium"
-                  :class="getPriorityClass(todo.priority)"
-                >
-                  {{ getPriorityText(todo.priority) }}
+                <span class="text-red-100 font-medium text-sm">{{ todo.title }}</span>
+                <span class="px-1.5 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                  督办
                 </span>
               </div>
-              <p class="text-purple-400/70 text-xs mb-2">{{ todo.description }}</p>
+              <p class="text-red-400/70 text-xs mb-2">{{ todo.description }}</p>
               <div class="flex items-center gap-3 text-xs">
-                <span class="text-purple-500/50 flex items-center gap-1">
+                <span class="text-red-500/50 flex items-center gap-1">
                   <Clock class="w-3 h-3" />
                   {{ formatTime(todo.time) }}
                 </span>
-                <span class="text-purple-400/50 group-hover:text-purple-300 transition-colors flex items-center gap-1">
+                <span v-if="todo.waitHours !== undefined" class="text-red-400/70 flex items-center gap-1 font-medium">
+                  <Timer class="w-3 h-3" />
+                  超时 {{ formatWaitHours(todo.waitHours - WARNING_THRESHOLD_HOURS) }}
+                </span>
+                <span class="text-red-400/50 group-hover:text-red-300 transition-colors flex items-center gap-1">
                   <ArrowRight class="w-3 h-3" />
-                  点击处理
+                  立即处理
                 </span>
               </div>
             </div>
@@ -111,59 +154,118 @@
         </div>
       </template>
 
-      <!-- 领导待办 -->
-      <template v-else-if="userRole === 'leader'">
-        <div v-if="leaderTodos.length === 0" class="text-center py-8">
+      <template v-else-if="activeTab === 'warning'">
+        <div v-if="warningTodos.length === 0" class="text-center py-8">
           <CheckCircle2 class="w-12 h-12 text-green-500/50 mx-auto mb-3" />
-          <p class="text-green-300/60 text-sm">暂无待办事项</p>
-          <p class="text-green-300/40 text-xs mt-1">全局运行状态良好</p>
+          <p class="text-green-300/60 text-sm">暂无预警事项</p>
+          <p class="text-green-300/40 text-xs mt-1">所有待办均在正常时限内</p>
         </div>
 
         <div
-          v-for="todo in leaderTodos"
+          v-for="todo in warningTodos"
           :key="todo.id"
-          class="bg-purple-900/30 rounded-xl p-4 border transition-all cursor-pointer group"
-          :class="todo.type === 'emergency' ? 'border-red-500/30 bg-red-900/20 animate-pulse' : todo.priority === 'high' ? 'border-orange-500/30 bg-orange-900/20' : 'border-purple-500/20 hover:bg-purple-800/30'"
+          class="bg-yellow-900/30 rounded-xl p-4 border border-yellow-500/30 transition-all cursor-pointer group"
           @click="handleTodoClick(todo)"
         >
           <div class="flex items-start gap-3">
-            <div
-              class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-              :class="getTodoIconClass(todo.type)"
-            >
-              <component :is="getTodoIcon(todo.type)" class="w-5 h-5" />
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-yellow-500/20 text-yellow-400">
+              <AlertTriangle class="w-5 h-5" />
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-purple-100 font-medium text-sm">{{ todo.title }}</span>
-                <span
-                  class="px-1.5 py-0.5 rounded text-xs font-medium"
-                  :class="getPriorityClass(todo.priority)"
-                >
-                  {{ getPriorityText(todo.priority) }}
+                <span class="text-yellow-100 font-medium text-sm">{{ todo.title }}</span>
+                <span class="px-1.5 py-0.5 rounded text-xs font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                  预警
                 </span>
               </div>
-              <p class="text-purple-400/70 text-xs mb-2">{{ todo.description }}</p>
+              <p class="text-yellow-400/70 text-xs mb-2">{{ todo.description }}</p>
               <div class="flex items-center gap-3 text-xs">
-                <span class="text-purple-500/50 flex items-center gap-1">
+                <span class="text-yellow-500/50 flex items-center gap-1">
                   <Clock class="w-3 h-3" />
                   {{ formatTime(todo.time) }}
                 </span>
-                <span class="text-purple-400/50 group-hover:text-purple-300 transition-colors flex items-center gap-1">
+                <span v-if="todo.waitHours !== undefined" class="text-yellow-400/70 flex items-center gap-1 font-medium">
+                  <Timer class="w-3 h-3" />
+                  {{ formatWaitHours(WARNING_THRESHOLD_HOURS - todo.waitHours) }}内将超时
+                </span>
+                <span class="text-yellow-400/50 group-hover:text-yellow-300 transition-colors flex items-center gap-1">
                   <ArrowRight class="w-3 h-3" />
-                  点击处理
+                  尽快处理
                 </span>
               </div>
             </div>
           </div>
         </div>
+      </template>
+
+      <template v-else-if="activeTab === 'ranking'">
+        <div v-if="userRole !== 'leader'" class="text-center py-8">
+          <Lock class="w-12 h-12 text-purple-500/50 mx-auto mb-3" />
+          <p class="text-purple-300/60 text-sm">仅中心领导可查看</p>
+        </div>
+
+        <template v-else>
+          <div class="bg-purple-900/30 rounded-xl p-4 border border-purple-500/20 mb-4">
+            <h4 class="text-sm font-medium text-purple-200 mb-3 flex items-center gap-2">
+              <BarChart3 class="w-4 h-4 text-purple-400" />
+              全局超时排行
+            </h4>
+            <div class="space-y-2">
+              <div
+                v-for="(item, index) in overdueRanking"
+                :key="item.id"
+                class="flex items-center gap-3 p-2 rounded-lg bg-purple-900/30 hover:bg-purple-800/30 transition-colors cursor-pointer"
+                @click="handleTodoClick(item.todo)"
+              >
+                <div
+                  class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                  :class="index === 0 ? 'bg-red-500 text-white' : index === 1 ? 'bg-orange-500 text-white' : index === 2 ? 'bg-yellow-500 text-white' : 'bg-gray-600 text-white'"
+                >
+                  {{ index + 1 }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm text-purple-200 truncate">{{ item.title }}</div>
+                  <div class="text-xs text-purple-400/60">超时 {{ formatWaitHours(item.overdueHours) }}</div>
+                </div>
+                <ArrowRight class="w-4 h-4 text-purple-400/50" />
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-purple-900/30 rounded-xl p-4 border border-purple-500/20">
+            <h4 class="text-sm font-medium text-purple-200 mb-3 flex items-center gap-2">
+              <Layers class="w-4 h-4 text-purple-400" />
+              各业务积压统计
+            </h4>
+            <div class="space-y-3">
+              <div v-for="item in businessBacklog" :key="item.type" class="space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-purple-300">{{ item.name }}</span>
+                  <span
+                    class="font-medium"
+                    :class="item.count > 10 ? 'text-red-400' : item.count > 5 ? 'text-yellow-400' : 'text-green-400'"
+                  >
+                    {{ item.count }} 件
+                  </span>
+                </div>
+                <div class="h-2 bg-purple-900/50 rounded-full overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    :class="item.count > 10 ? 'bg-red-500' : item.count > 5 ? 'bg-yellow-500' : 'bg-green-500'"
+                    :style="{ width: `${Math.min(100, item.count * 5)}%` }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
       </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import {
   ListTodo,
   BellRing,
@@ -173,19 +275,36 @@ import {
   Siren,
   CheckCircle2,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Timer,
+  Lock,
+  BarChart3,
+  Layers,
+  AlertCircle,
+  TrendingUp
 } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { useWindow } from '@/composables/useWindow'
 import { useMaterial } from '@/composables/useMaterial'
 import { useEmergency } from '@/composables/useEmergency'
-import type { TodoItem, TodoType, ApprovalRecord } from '@/types'
+import type { TodoItem, TodoType } from '@/types'
 import { ElMessage } from 'element-plus'
+
+const WARNING_THRESHOLD_HOURS = 2
+const OVERDUE_THRESHOLD_HOURS = 4
 
 const { userRole, currentUser } = useAuth()
 const { windows, selectWindow } = useWindow()
 const { approvalProcesses } = useMaterial()
 const { emergencyActive } = useEmergency()
+
+const activeTab = ref<'all' | 'overdue' | 'warning' | 'ranking'>('all')
+
+const getTodoStatus = (waitHours: number): 'normal' | 'warning' | 'overdue' => {
+  if (waitHours >= OVERDUE_THRESHOLD_HOURS) return 'overdue'
+  if (waitHours >= WARNING_THRESHOLD_HOURS) return 'warning'
+  return 'normal'
+}
 
 const windowTodos = computed<TodoItem[]>(() => {
   if (userRole.value !== 'window') return []
@@ -197,6 +316,7 @@ const windowTodos = computed<TodoItem[]>(() => {
   const myWindow = windows.value.find(w => w.staffName === staffName)
   if (myWindow) {
     if (myWindow.queueCount > 0) {
+      const waitHours = myWindow.queueCount * 0.13
       todos.push({
         id: `todo_call_${myWindow.id}`,
         type: 'call_next',
@@ -205,7 +325,9 @@ const windowTodos = computed<TodoItem[]>(() => {
         priority: myWindow.queueCount > 5 ? 'high' : 'medium',
         targetId: myWindow.id,
         targetType: 'window',
-        time: new Date()
+        time: new Date(),
+        todoStatus: getTodoStatus(waitHours),
+        waitHours
       })
     }
     
@@ -218,7 +340,9 @@ const windowTodos = computed<TodoItem[]>(() => {
         priority: 'low',
         targetId: myWindow.id,
         targetType: 'window',
-        time: new Date()
+        time: new Date(),
+        todoStatus: 'normal',
+        waitHours: 0
       })
     }
   }
@@ -237,7 +361,7 @@ const chiefTodos = computed<TodoItem[]>(() => {
   
   pendingReviews.forEach(process => {
     const waitTime = Date.now() - new Date(process.startTime).getTime()
-    const waitHours = Math.floor(waitTime / 3600000)
+    const waitHours = waitTime / 3600000
     
     todos.push({
       id: `todo_review_${process.id}`,
@@ -247,7 +371,9 @@ const chiefTodos = computed<TodoItem[]>(() => {
       priority: waitHours > 2 ? 'high' : waitHours > 1 ? 'medium' : 'low',
       targetId: process.id,
       targetType: 'approval',
-      time: process.startTime
+      time: process.startTime,
+      todoStatus: getTodoStatus(waitHours),
+      waitHours
     })
   })
   
@@ -264,7 +390,9 @@ const chiefTodos = computed<TodoItem[]>(() => {
       priority: 'high',
       targetId: 'tax',
       targetType: 'environment',
-      time: new Date()
+      time: new Date(),
+      todoStatus: taxQueue > 20 ? 'overdue' : 'warning',
+      waitHours: taxQueue * 0.13
     })
   }
   if (socialQueue > 15) {
@@ -276,7 +404,9 @@ const chiefTodos = computed<TodoItem[]>(() => {
       priority: 'high',
       targetId: 'social',
       targetType: 'environment',
-      time: new Date()
+      time: new Date(),
+      todoStatus: socialQueue > 20 ? 'overdue' : 'warning',
+      waitHours: socialQueue * 0.13
     })
   }
   if (industryQueue > 15) {
@@ -288,12 +418,17 @@ const chiefTodos = computed<TodoItem[]>(() => {
       priority: 'high',
       targetId: 'industry',
       targetType: 'environment',
-      time: new Date()
+      time: new Date(),
+      todoStatus: industryQueue > 20 ? 'overdue' : 'warning',
+      waitHours: industryQueue * 0.13
     })
   }
   
   return todos.sort((a, b) => {
     const priorityOrder = { high: 0, medium: 1, low: 2 }
+    const statusOrder = { overdue: 0, warning: 1, normal: 2 }
+    const statusDiff = statusOrder[a.todoStatus || 'normal'] - statusOrder[b.todoStatus || 'normal']
+    if (statusDiff !== 0) return statusDiff
     return priorityOrder[a.priority] - priorityOrder[b.priority]
   })
 })
@@ -312,7 +447,9 @@ const leaderTodos = computed<TodoItem[]>(() => {
       priority: 'high',
       targetId: 'emergency',
       targetType: 'environment',
-      time: new Date()
+      time: new Date(),
+      todoStatus: 'overdue',
+      waitHours: 999
     })
   }
   
@@ -321,6 +458,9 @@ const leaderTodos = computed<TodoItem[]>(() => {
   )
   
   pendingSigns.forEach(process => {
+    const waitTime = Date.now() - new Date(process.startTime).getTime()
+    const waitHours = waitTime / 3600000
+    
     todos.push({
       id: `todo_sign_${process.id}`,
       type: 'sign',
@@ -329,13 +469,13 @@ const leaderTodos = computed<TodoItem[]>(() => {
       priority: 'high',
       targetId: process.id,
       targetType: 'approval',
-      time: process.steps[2].time || new Date()
+      time: process.steps[2].time || new Date(),
+      todoStatus: getTodoStatus(waitHours),
+      waitHours
     })
   })
   
   const totalQueue = windows.value.reduce((sum, w) => sum + w.queueCount, 0)
-  const completedCount = approvalProcesses.value.filter(p => p.status === 'completed').length
-  const processingCount = approvalProcesses.value.filter(p => p.status === 'processing').length
   
   if (totalQueue > 30) {
     todos.push({
@@ -346,7 +486,9 @@ const leaderTodos = computed<TodoItem[]>(() => {
       priority: 'medium',
       targetId: 'global',
       targetType: 'environment',
-      time: new Date()
+      time: new Date(),
+      todoStatus: totalQueue > 50 ? 'overdue' : 'warning',
+      waitHours: totalQueue * 0.13
     })
   }
   
@@ -364,12 +506,17 @@ const leaderTodos = computed<TodoItem[]>(() => {
       priority: 'high',
       targetId: 'timeout',
       targetType: 'approval',
-      time: new Date()
+      time: new Date(),
+      todoStatus: 'overdue',
+      waitHours: 25
     })
   }
   
   return todos.sort((a, b) => {
     const priorityOrder = { high: 0, medium: 1, low: 2 }
+    const statusOrder = { overdue: 0, warning: 1, normal: 2 }
+    const statusDiff = statusOrder[a.todoStatus || 'normal'] - statusOrder[b.todoStatus || 'normal']
+    if (statusDiff !== 0) return statusDiff
     return priorityOrder[a.priority] - priorityOrder[b.priority]
   })
 })
@@ -379,6 +526,52 @@ const pendingTodos = computed(() => {
   if (userRole.value === 'chief') return chiefTodos.value
   if (userRole.value === 'leader') return leaderTodos.value
   return []
+})
+
+const normalTodos = computed(() => pendingTodos.value.filter(t => t.todoStatus === 'normal' || !t.todoStatus))
+const warningTodos = computed(() => pendingTodos.value.filter(t => t.todoStatus === 'warning'))
+const overdueTodos = computed(() => pendingTodos.value.filter(t => t.todoStatus === 'overdue'))
+
+const displayedTodos = computed(() => {
+  if (activeTab.value === 'all') return pendingTodos.value
+  if (activeTab.value === 'overdue') return overdueTodos.value
+  if (activeTab.value === 'warning') return warningTodos.value
+  return []
+})
+
+const tabs = computed<{ key: 'all' | 'overdue' | 'warning' | 'ranking'; label: string; icon: any; count: number }[]>(() => [
+  { key: 'all', label: '全部', icon: ListTodo, count: pendingTodos.value.length },
+  { key: 'overdue', label: '督办', icon: Siren, count: overdueTodos.value.length },
+  { key: 'warning', label: '预警', icon: AlertTriangle, count: warningTodos.value.length },
+  { key: 'ranking', label: '排行', icon: TrendingUp, count: 0 }
+])
+
+const overdueRanking = computed(() => {
+  return [...overdueTodos.value]
+    .filter(t => t.waitHours !== undefined)
+    .map(t => ({
+      id: t.id,
+      title: t.title,
+      overdueHours: (t.waitHours || 0) - OVERDUE_THRESHOLD_HOURS,
+      todo: t
+    }))
+    .sort((a, b) => b.overdueHours - a.overdueHours)
+    .slice(0, 5)
+})
+
+const businessBacklog = computed(() => {
+  const taxCount = approvalProcesses.value.filter(p => p.status === 'processing').length +
+                   windows.value.filter(w => w.businessType === 'tax').reduce((sum, w) => sum + w.queueCount, 0)
+  const socialCount = approvalProcesses.value.filter(p => p.status === 'processing').length +
+                      windows.value.filter(w => w.businessType === 'social').reduce((sum, w) => sum + w.queueCount, 0)
+  const industryCount = approvalProcesses.value.filter(p => p.status === 'processing').length +
+                        windows.value.filter(w => w.businessType === 'industry').reduce((sum, w) => sum + w.queueCount, 0)
+  
+  return [
+    { type: 'tax', name: '税务业务', count: taxCount },
+    { type: 'social', name: '社保业务', count: socialCount },
+    { type: 'industry', name: '工商业务', count: industryCount }
+  ]
 })
 
 const getTodoIcon = (type: TodoType) => {
@@ -403,6 +596,13 @@ const getTodoIconClass = (type: TodoType): string => {
     emergency: 'bg-red-500/20 text-red-400'
   }
   return classes[type]
+}
+
+const getTodoCardClass = (todo: TodoItem): string => {
+  if (todo.todoStatus === 'overdue') return 'border-red-500/30 bg-red-900/20'
+  if (todo.todoStatus === 'warning') return 'border-yellow-500/30 bg-yellow-900/20'
+  if (todo.priority === 'high') return 'border-orange-500/30 bg-orange-900/20'
+  return 'border-purple-500/20 hover:bg-purple-800/30'
 }
 
 const getPriorityClass = (priority: string): string => {
@@ -436,6 +636,22 @@ const formatTime = (date: Date): string => {
   if (hours < 24) return `${hours}小时前`
   
   return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+}
+
+const formatWaitHours = (hours: number): string => {
+  if (hours < 1) return `${Math.floor(hours * 60)}分钟`
+  if (hours < 24) return `${Math.floor(hours)}小时`
+  const days = Math.floor(hours / 24)
+  const remainingHours = Math.floor(hours % 24)
+  if (remainingHours === 0) return `${days}天`
+  return `${days}天${remainingHours}小时`
+}
+
+const getEmptyText = (): string => {
+  if (userRole.value === 'window') return '当前工作状态良好'
+  if (userRole.value === 'chief') return '审批工作已全部完成'
+  if (userRole.value === 'leader') return '全局运行状态良好'
+  return '暂无待办'
 }
 
 const handleTodoClick = (todo: TodoItem) => {

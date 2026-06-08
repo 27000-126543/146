@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { EnvironmentData, Personnel, MaterialFlow, EvacuationPath, Area, ApprovalProcess, ApprovalRecord } from '../types'
+import type { EnvironmentData, Personnel, MaterialFlow, EvacuationPath, Area, ApprovalProcess, ApprovalRecord, RejectRecord, UserRole } from '../types'
 import { mockEnvironment, mockPersonnel, mockAreas, generateApprovalProcess, mockWindows } from '../mock/data'
 
 const APPROVAL_STORAGE_KEY = 'gov_hall_approvals'
@@ -146,33 +146,85 @@ export const useHallStore = defineStore('hall', () => {
     return record
   }
 
-  const advanceApprovalStep = (processId: string, operatorName: string = '') => {
+  const advanceApprovalStep = (processId: string, operatorName: string = '', opinion: string = '', operatorRole: UserRole = 'window') => {
     const process = approvalProcesses.value.find(p => p.id === processId)
-    if (!process || process.currentStep >= 2 || process.status === 'completed') return
+    if (!process || process.status === 'completed') return
     
     const now = new Date()
     const prevStep = process.steps[process.currentStep]
     prevStep.status = 'completed'
     prevStep.duration = Math.floor((now.getTime() - new Date(prevStep.time).getTime()) / 60000)
-    
-    process.currentStep++
-    const currentStep = process.steps[process.currentStep]
-    currentStep.status = 'processing'
-    currentStep.time = now
-    if (operatorName) {
-      currentStep.operator = operatorName
-    } else if (process.currentStep === 1) {
-      currentStep.operator = '周审批'
-    } else if (process.currentStep === 2) {
-      currentStep.operator = '吴领导'
+    prevStep.operator = operatorName
+    if (opinion) {
+      prevStep.opinion = opinion
     }
     
-    if (process.currentStep >= 2) {
-      process.steps[2].status = 'completed'
-      process.steps[2].duration = 0
+    if (process.currentStep < 2) {
+      process.currentStep++
+      const nextStep = process.steps[process.currentStep]
+      nextStep.status = 'processing'
+      nextStep.time = now
+      
+      if (process.currentStep === 2 && operatorRole === 'leader') {
+        nextStep.status = 'completed'
+        nextStep.operator = operatorName
+        nextStep.duration = 0
+        nextStep.opinion = opinion
+        process.status = 'completed'
+        process.completedTime = now
+      }
+    } else if (process.currentStep === 2 && operatorRole === 'leader') {
       process.status = 'completed'
       process.completedTime = now
     }
+    
+    saveApprovalsToStorage()
+  }
+
+  const rejectApprovalStep = (
+    processId: string, 
+    operatorName: string = '', 
+    reason: string = '', 
+    opinion: string = '',
+    operatorRole: UserRole = 'window'
+  ) => {
+    const process = approvalProcesses.value.find(p => p.id === processId)
+    if (!process || process.status === 'completed') return
+    
+    const now = new Date()
+    const currentStep = process.steps[process.currentStep]
+    currentStep.status = 'rejected'
+    currentStep.operator = operatorName
+    currentStep.rejectReason = reason
+    currentStep.opinion = opinion
+    currentStep.duration = Math.floor((now.getTime() - new Date(currentStep.time).getTime()) / 60000)
+    
+    let targetStep = 0
+    if (process.currentStep === 1) {
+      targetStep = 0
+    } else if (process.currentStep === 2) {
+      targetStep = 1
+    }
+    
+    const rejectRecord: RejectRecord = {
+      fromStep: currentStep.name,
+      toStep: process.steps[targetStep].name,
+      operator: operatorName,
+      reason,
+      time: now,
+      opinion
+    }
+    
+    if (!process.rejectHistory) {
+      process.rejectHistory = []
+    }
+    process.rejectHistory.push(rejectRecord)
+    
+    process.currentStep = targetStep
+    const nextStep = process.steps[targetStep]
+    nextStep.status = 'processing'
+    nextStep.time = now
+    nextStep.operator = ''
     
     saveApprovalsToStorage()
   }
@@ -197,6 +249,10 @@ export const useHallStore = defineStore('hall', () => {
           steps: r.steps.map(s => ({
             ...s,
             time: new Date(s.time)
+          })),
+          rejectHistory: r.rejectHistory?.map((rh: RejectRecord) => ({
+            ...rh,
+            time: new Date(rh.time)
           }))
         }))
       }
@@ -283,6 +339,7 @@ export const useHallStore = defineStore('hall', () => {
     createMaterialFlow,
     createApprovalProcess,
     advanceApprovalStep,
+    rejectApprovalStep,
     saveApprovalsToStorage,
     loadApprovalsFromStorage,
     startEmergency,
