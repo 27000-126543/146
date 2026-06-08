@@ -4,18 +4,22 @@ import WindowInfoPanel from '@/components/ui/WindowInfoPanel.vue'
 import ApprovalPanel from '@/components/ui/ApprovalPanel.vue'
 import EnvironmentPanel from '@/components/ui/EnvironmentPanel.vue'
 import PersonnelPanel from '@/components/ui/PersonnelPanel.vue'
+import AssignmentPanel from '@/components/ui/AssignmentPanel.vue'
 import ControlBar from '@/components/ui/ControlBar.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useWindow } from '@/composables/useWindow'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 
 const { userName, userRole, isLoggedIn, hasPermission, logout } = useAuth()
+const { loadAssignmentsFromStorage } = useWindow()
 const router = useRouter()
 
 onMounted(() => {
   if (!isLoggedIn.value) {
     router.push('/login')
   }
+  loadAssignmentsFromStorage()
 })
 </script>
 
@@ -57,6 +61,10 @@ onMounted(() => {
 
     <div class="absolute top-16 right-4 z-10 w-80">
       <WindowInfoPanel />
+    </div>
+
+    <div class="absolute right-4 z-10 w-80" style="top: 420px;">
+      <AssignmentPanel />
     </div>
 
     <div class="absolute bottom-24 left-4 z-10 w-72">

@@ -10,7 +10,7 @@ export const mockWindows: WindowInfo[] = [
     staffName: '张税务',
     processDuration: 245,
     queueCount: 5,
-    avgWaitTime: 480,
+    avgWaitTime: 40,
     status: 'busy',
     position: { x: -12, y: 0, z: -8 }
   },
@@ -23,7 +23,7 @@ export const mockWindows: WindowInfo[] = [
     staffName: '李税员',
     processDuration: 180,
     queueCount: 3,
-    avgWaitTime: 420,
+    avgWaitTime: 24,
     status: 'busy',
     position: { x: -8, y: 0, z: -8 }
   },
@@ -36,7 +36,7 @@ export const mockWindows: WindowInfo[] = [
     staffName: '王社保',
     processDuration: 320,
     queueCount: 7,
-    avgWaitTime: 600,
+    avgWaitTime: 56,
     status: 'busy',
     position: { x: -4, y: 0, z: -8 }
   },
@@ -48,8 +48,8 @@ export const mockWindows: WindowInfo[] = [
     currentNumber: 'B00087',
     staffName: '赵社保',
     processDuration: 150,
-    queueCount: 2,
-    avgWaitTime: 360,
+    queueCount: 0,
+    avgWaitTime: 0,
     status: 'idle',
     position: { x: 0, y: 0, z: -8 }
   },
@@ -62,7 +62,7 @@ export const mockWindows: WindowInfo[] = [
     staffName: '刘工商',
     processDuration: 420,
     queueCount: 8,
-    avgWaitTime: 720,
+    avgWaitTime: 64,
     status: 'busy',
     position: { x: 4, y: 0, z: -8 }
   },
@@ -75,7 +75,7 @@ export const mockWindows: WindowInfo[] = [
     staffName: '陈工商',
     processDuration: 380,
     queueCount: 6,
-    avgWaitTime: 660,
+    avgWaitTime: 48,
     status: 'busy',
     position: { x: 8, y: 0, z: -8 }
   },

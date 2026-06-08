@@ -249,112 +249,286 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- 中间：快速操作区 -->
+      <!-- 中间：快速操作区（按角色显示） -->
       <div class="flex items-center gap-4">
-        <!-- 业务分配 -->
-        <div
-          class="flex items-center gap-2 px-4 py-2 rounded-xl"
-          :class="
-            emergencyActive
-              ? 'bg-red-800/40 border border-red-500/30'
-              : 'bg-slate-800/50 border border-slate-700/50'
-          "
-        >
-          <span
-            class="text-xs font-medium mr-1"
-            :class="emergencyActive ? 'text-red-300' : 'text-slate-400'"
-          >
-            业务分配
-          </span>
-          <button
-            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
-            :class="[
-              emergencyActive
-                ? 'bg-red-600/50 text-red-100 hover:bg-red-500/50 border border-red-400/30'
-                : 'bg-blue-600/30 text-blue-200 hover:bg-blue-500/40 border border-blue-400/30 hover:scale-105'
-            ]"
-            :disabled="emergencyActive"
-            @click="handleBusinessAssign('tax')"
-          >
-            <Landmark class="w-4 h-4" />
-            税务
-          </button>
-          <button
-            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
-            :class="[
-              emergencyActive
-                ? 'bg-red-600/50 text-red-100 hover:bg-red-500/50 border border-red-400/30'
-                : 'bg-emerald-600/30 text-emerald-200 hover:bg-emerald-500/40 border border-emerald-400/30 hover:scale-105'
-            ]"
-            :disabled="emergencyActive"
-            @click="handleBusinessAssign('social')"
-          >
-            <HeartPulse class="w-4 h-4" />
-            社保
-          </button>
-          <button
-            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
-            :class="[
-              emergencyActive
-                ? 'bg-red-600/50 text-red-100 hover:bg-red-500/50 border border-red-400/30'
-                : 'bg-amber-600/30 text-amber-200 hover:bg-amber-500/40 border border-amber-400/30 hover:scale-105'
-            ]"
-            :disabled="emergencyActive"
-            @click="handleBusinessAssign('industry')"
-          >
-            <Briefcase class="w-4 h-4" />
-            工商
-          </button>
-        </div>
-
-        <!-- 应急疏散 -->
-        <button
-          class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 relative overflow-hidden"
-          :class="[
-            emergencyActive
-              ? 'bg-red-600 text-white border-2 border-red-300 shadow-lg shadow-red-500/50'
-              : 'bg-slate-800/50 text-slate-300 border border-slate-600/50 hover:bg-red-900/30 hover:text-red-300 hover:border-red-500/50'
-          ]"
-          @click="handleEmergency"
-        >
-          <Siren
-            class="w-5 h-5"
-            :class="{ 'animate-bounce': emergencyActive }"
-          />
-          {{ emergencyActive ? '疏散中 - 点击解除' : '应急疏散' }}
+        <!-- 窗口人员操作区 -->
+        <template v-if="hasPermission('window')">
           <div
-            v-if="emergencyActive"
-            class="absolute inset-0 bg-white/20 animate-ping"
-          />
-        </button>
-
-        <!-- 清除引导线 -->
-        <button
-          class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
-          :class="[
-            emergencyActive
-              ? 'bg-red-800/40 text-red-300 border border-red-500/30'
-              : activeGuideCount > 0
-                ? 'bg-slate-800/50 text-slate-300 border border-slate-600/50 hover:bg-slate-700/50 hover:text-white'
-                : 'bg-slate-800/30 text-slate-500 border border-slate-700/30 cursor-not-allowed'
-          ]"
-          :disabled="emergencyActive || activeGuideCount === 0"
-          @click="handleClearGuideLines"
-        >
-          <Trash2 class="w-4 h-4" />
-          清除引导
-          <span
-            v-if="activeGuideCount > 0"
-            class="px-1.5 py-0.5 rounded-full text-xs"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl"
             :class="
               emergencyActive
-                ? 'bg-red-500/50 text-red-100'
-                : 'bg-cyan-500/30 text-cyan-200'
+                ? 'bg-red-800/40 border border-red-500/30'
+                : 'bg-slate-800/50 border border-slate-700/50'
             "
           >
-            {{ activeGuideCount }}
-          </span>
-        </button>
+            <span
+              class="text-xs font-medium mr-1"
+              :class="emergencyActive ? 'text-red-300' : 'text-slate-400'"
+            >
+              窗口操作
+            </span>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-blue-600/30 text-blue-200 hover:bg-blue-500/40 border border-blue-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('tax')"
+            >
+              <Landmark class="w-4 h-4" />
+              税务
+            </button>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-emerald-600/30 text-emerald-200 hover:bg-emerald-500/40 border border-emerald-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('social')"
+            >
+              <HeartPulse class="w-4 h-4" />
+              社保
+            </button>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-amber-600/30 text-amber-200 hover:bg-amber-500/40 border border-amber-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('industry')"
+            >
+              <Briefcase class="w-4 h-4" />
+              工商
+            </button>
+          </div>
+
+          <!-- 清除引导线 -->
+          <button
+            class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+            :class="[
+              emergencyActive
+                ? 'bg-red-800/40 text-red-300 border border-red-500/30'
+                : activeGuideCount > 0
+                  ? 'bg-slate-800/50 text-slate-300 border border-slate-600/50 hover:bg-slate-700/50 hover:text-white'
+                  : 'bg-slate-800/30 text-slate-500 border border-slate-700/30 cursor-not-allowed'
+            ]"
+            :disabled="emergencyActive || activeGuideCount === 0"
+            @click="handleClearGuideLines"
+          >
+            <Trash2 class="w-4 h-4" />
+            清除引导
+            <span
+              v-if="activeGuideCount > 0"
+              class="px-1.5 py-0.5 rounded-full text-xs"
+              :class="
+                emergencyActive
+                  ? 'bg-red-500/50 text-red-100'
+                  : 'bg-cyan-500/30 text-cyan-200'
+              "
+            >
+              {{ activeGuideCount }}
+            </span>
+          </button>
+        </template>
+
+        <!-- 科长操作区 -->
+        <template v-else-if="hasPermission('chief')">
+          <div
+            class="flex items-center gap-2 px-4 py-2 rounded-xl"
+            :class="
+              emergencyActive
+                ? 'bg-red-800/40 border border-red-500/30'
+                : 'bg-slate-800/50 border border-slate-700/50'
+            "
+          >
+            <span
+              class="text-xs font-medium mr-1"
+              :class="emergencyActive ? 'text-red-300' : 'text-slate-400'"
+            >
+              全局分配
+            </span>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-blue-600/30 text-blue-200 hover:bg-blue-500/40 border border-blue-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('tax')"
+            >
+              <Landmark class="w-4 h-4" />
+              税务
+            </button>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-emerald-600/30 text-emerald-200 hover:bg-emerald-500/40 border border-emerald-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('social')"
+            >
+              <HeartPulse class="w-4 h-4" />
+              社保
+            </button>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-amber-600/30 text-amber-200 hover:bg-amber-500/40 border border-amber-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('industry')"
+            >
+              <Briefcase class="w-4 h-4" />
+              工商
+            </button>
+          </div>
+
+          <!-- 清除引导线 -->
+          <button
+            class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+            :class="[
+              emergencyActive
+                ? 'bg-red-800/40 text-red-300 border border-red-500/30'
+                : activeGuideCount > 0
+                  ? 'bg-slate-800/50 text-slate-300 border border-slate-600/50 hover:bg-slate-700/50 hover:text-white'
+                  : 'bg-slate-800/30 text-slate-500 border border-slate-700/30 cursor-not-allowed'
+            ]"
+            :disabled="emergencyActive || activeGuideCount === 0"
+            @click="handleClearGuideLines"
+          >
+            <Trash2 class="w-4 h-4" />
+            清除引导
+            <span
+              v-if="activeGuideCount > 0"
+              class="px-1.5 py-0.5 rounded-full text-xs"
+              :class="
+                emergencyActive
+                  ? 'bg-red-500/50 text-red-100'
+                  : 'bg-cyan-500/30 text-cyan-200'
+              "
+            >
+              {{ activeGuideCount }}
+            </span>
+          </button>
+        </template>
+
+        <!-- 领导操作区 -->
+        <template v-else-if="hasPermission('leader')">
+          <div
+            class="flex items-center gap-2 px-4 py-2 rounded-xl"
+            :class="
+              emergencyActive
+                ? 'bg-red-800/40 border border-red-500/30'
+                : 'bg-slate-800/50 border border-slate-700/50'
+            "
+          >
+            <span
+              class="text-xs font-medium mr-1"
+              :class="emergencyActive ? 'text-red-300' : 'text-slate-400'"
+            >
+              全局调度
+            </span>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-blue-600/30 text-blue-200 hover:bg-blue-500/40 border border-blue-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('tax')"
+            >
+              <Landmark class="w-4 h-4" />
+              税务
+            </button>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-emerald-600/30 text-emerald-200 hover:bg-emerald-500/40 border border-emerald-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('social')"
+            >
+              <HeartPulse class="w-4 h-4" />
+              社保
+            </button>
+            <button
+              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
+              :class="[
+                emergencyActive
+                  ? 'bg-red-600/50 text-red-100 border border-red-400/30'
+                  : 'bg-amber-600/30 text-amber-200 hover:bg-amber-500/40 border border-amber-400/30 hover:scale-105'
+              ]"
+              :disabled="emergencyActive"
+              @click="handleBusinessAssign('industry')"
+            >
+              <Briefcase class="w-4 h-4" />
+              工商
+            </button>
+          </div>
+
+          <!-- 应急疏散 -->
+          <button
+            class="px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 relative overflow-hidden"
+            :class="[
+              emergencyActive
+                ? 'bg-red-600 text-white border-2 border-red-300 shadow-lg shadow-red-500/50'
+                : 'bg-slate-800/50 text-slate-300 border border-slate-600/50 hover:bg-red-900/30 hover:text-red-300 hover:border-red-500/50'
+            ]"
+            @click="handleEmergency"
+          >
+            <Siren
+              class="w-5 h-5"
+              :class="{ 'animate-bounce': emergencyActive }"
+            />
+            {{ emergencyActive ? '疏散中 - 点击解除' : '应急疏散' }}
+            <div
+              v-if="emergencyActive"
+              class="absolute inset-0 bg-white/20 animate-ping"
+            />
+          </button>
+
+          <!-- 清除引导线 -->
+          <button
+            class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2"
+            :class="[
+              emergencyActive
+                ? 'bg-red-800/40 text-red-300 border border-red-500/30'
+                : activeGuideCount > 0
+                  ? 'bg-slate-800/50 text-slate-300 border border-slate-600/50 hover:bg-slate-700/50 hover:text-white'
+                  : 'bg-slate-800/30 text-slate-500 border border-slate-700/30 cursor-not-allowed'
+            ]"
+            :disabled="emergencyActive || activeGuideCount === 0"
+            @click="handleClearGuideLines"
+          >
+            <Trash2 class="w-4 h-4" />
+            清除引导
+            <span
+              v-if="activeGuideCount > 0"
+              class="px-1.5 py-0.5 rounded-full text-xs"
+              :class="
+                emergencyActive
+                  ? 'bg-red-500/50 text-red-100'
+                  : 'bg-cyan-500/30 text-cyan-200'
+              "
+            >
+              {{ activeGuideCount }}
+            </span>
+          </button>
+        </template>
       </div>
 
       <!-- 右侧：实时数据和时钟 -->

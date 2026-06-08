@@ -1,13 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { WindowInfo, BusinessType, GuideLine, Position3D } from '../types'
+import type { WindowInfo, BusinessType, GuideLine, Position3D, AssignmentRecord } from '../types'
 import { mockWindows } from '../mock/data'
+
+const ASSIGNMENT_STORAGE_KEY = 'gov_hall_assignments'
 
 export const useWindowStore = defineStore('window', () => {
   const windows = ref<WindowInfo[]>([...mockWindows])
   const selectedWindow = ref<WindowInfo | null>(null)
   const guideLines = ref<GuideLine[]>([])
   const autoAssignEnabled = ref(true)
+  const assignmentRecords = ref<AssignmentRecord[]>([])
+  const latestAssignment = ref<AssignmentRecord | null>(null)
 
   const taxWindows = computed(() => windows.value.filter(w => w.businessType === 'tax' && w.status !== 'offline'))
   const socialWindows = computed(() => windows.value.filter(w => w.businessType === 'social' && w.status !== 'offline'))
@@ -90,7 +94,81 @@ export const useWindowStore = defineStore('window', () => {
           w.processDuration = 0
         }
       }
+      updateAvgWaitTime(w.id)
     })
+  }
+
+  const updateAvgWaitTime = (windowId: string) => {
+    const window = getWindowById(windowId)
+    if (window) {
+      if (window.queueCount === 0) {
+        window.avgWaitTime = 0
+      } else {
+        const avgHandleTime = 8
+        window.avgWaitTime = Math.min(30, window.queueCount * avgHandleTime)
+      }
+    }
+  }
+
+  const calculateWaitTime = (queueCount: number): number => {
+    if (queueCount === 0) return 0
+    const avgHandleTime = 8
+    return Math.min(30, queueCount * avgHandleTime)
+  }
+
+  const addAssignmentRecord = (
+    businessType: BusinessType,
+    windowInfo: WindowInfo
+  ): AssignmentRecord => {
+    const businessNames: Record<BusinessType, string> = {
+      tax: '税务',
+      social: '社保',
+      industry: '工商'
+    }
+    
+    const record: AssignmentRecord = {
+      id: `assign_${Date.now()}`,
+      businessType,
+      businessName: businessNames[businessType],
+      windowId: windowInfo.id,
+      windowNumber: windowInfo.number,
+      queueCount: windowInfo.queueCount,
+      estimatedWaitTime: calculateWaitTime(windowInfo.queueCount),
+      assignTime: new Date()
+    }
+    
+    assignmentRecords.value.unshift(record)
+    latestAssignment.value = record
+    
+    if (assignmentRecords.value.length > 50) {
+      assignmentRecords.value = assignmentRecords.value.slice(0, 50)
+    }
+    
+    saveAssignmentsToStorage()
+    return record
+  }
+
+  const saveAssignmentsToStorage = () => {
+    try {
+      localStorage.setItem(ASSIGNMENT_STORAGE_KEY, JSON.stringify(assignmentRecords.value))
+    } catch (e) {
+      console.error('保存分配记录失败:', e)
+    }
+  }
+
+  const loadAssignmentsFromStorage = () => {
+    try {
+      const stored = localStorage.getItem(ASSIGNMENT_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        assignmentRecords.value = parsed.map((r: AssignmentRecord) => ({
+          ...r,
+          assignTime: new Date(r.assignTime)
+        }))
+      }
+    } catch (e) {
+      console.error('加载分配记录失败:', e)
+    }
   }
 
   return {
@@ -98,6 +176,8 @@ export const useWindowStore = defineStore('window', () => {
     selectedWindow,
     guideLines,
     autoAssignEnabled,
+    assignmentRecords,
+    latestAssignment,
     taxWindows,
     socialWindows,
     industryWindows,
@@ -112,6 +192,11 @@ export const useWindowStore = defineStore('window', () => {
     clearGuideLines,
     callNextNumber,
     updateWindowStatus,
-    simulateQueueUpdate
+    simulateQueueUpdate,
+    updateAvgWaitTime,
+    calculateWaitTime,
+    addAssignmentRecord,
+    loadAssignmentsFromStorage,
+    saveAssignmentsToStorage
   }
 })

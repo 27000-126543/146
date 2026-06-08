@@ -131,3 +131,27 @@ export interface EvacuationPath {
   points: Position3D[]
   active: boolean
 }
+
+export interface AssignmentRecord {
+  id: string
+  businessType: BusinessType
+  businessName: string
+  windowId: string
+  windowNumber: number
+  queueCount: number
+  estimatedWaitTime: number
+  assignTime: Date
+}
+
+export interface ApprovalRecord {
+  id: string
+  materialId: string
+  materialName: string
+  submitter: string
+  windowId: string
+  windowNumber: number
+  steps: ApprovalStep[]
+  currentStep: number
+  startTime: Date
+  completedTime?: Date
+  status: 'processing' | 'completed'

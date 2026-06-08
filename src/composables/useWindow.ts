@@ -9,6 +9,8 @@ export function useWindow() {
     selectedWindow,
     guideLines,
     autoAssignEnabled,
+    assignmentRecords,
+    latestAssignment,
     taxWindows,
     socialWindows,
     industryWindows,
@@ -24,8 +26,15 @@ export function useWindow() {
         { x: 0, y: 0.1, z: 0 },
         { x: assignedWindow.position.x, y: 0.1, z: assignedWindow.position.z + 2 }
       )
+      windowStore.addAssignmentRecord(businessType, assignedWindow)
     }
     return assignedWindow
+  }
+
+  const formatWaitTime = (minutes: number): string => {
+    if (minutes === 0) return '暂无等待'
+    if (minutes < 1) return '即将轮到'
+    return `${minutes}分钟`
   }
 
   const formatDuration = (seconds: number): string => {
@@ -66,6 +75,8 @@ export function useWindow() {
     selectedWindow,
     guideLines,
     autoAssignEnabled,
+    assignmentRecords,
+    latestAssignment,
     taxWindows,
     socialWindows,
     industryWindows,
@@ -80,8 +91,11 @@ export function useWindow() {
     simulateQueueUpdate: windowStore.simulateQueueUpdate,
     clearGuideLines: windowStore.clearGuideLines,
     formatDuration,
+    formatWaitTime,
     getBusinessIcon,
     getStatusColor,
-    getStatusText
+    getStatusText,
+    calculateWaitTime: windowStore.calculateWaitTime,
+    loadAssignmentsFromStorage: windowStore.loadAssignmentsFromStorage
   }
 }

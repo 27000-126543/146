@@ -65,7 +65,7 @@
               <Clock class="w-4 h-4" />
               平均等待
             </span>
-            <span class="text-blue-100 font-medium">{{ selectedWindow.avgWaitTime }} 分钟</span>
+            <span class="text-blue-100 font-medium">{{ formatWaitTime(selectedWindow.avgWaitTime) }}</span>
           </div>
         </div>
 
@@ -116,7 +116,7 @@ import { useWindow } from '../../composables/useWindow'
 import { useMaterial } from '../../composables/useMaterial'
 import { useAuth } from '../../composables/useAuth'
 
-const { selectedWindow, totalQueue, busyCount, formatDuration, getBusinessIcon, getStatusText, getStatusColor, callNextNumber } = useWindow()
+const { selectedWindow, totalQueue, busyCount, formatDuration, formatWaitTime, getBusinessIcon, getStatusText, getStatusColor, callNextNumber } = useWindow()
 const { submitMaterial } = useMaterial()
 const { hasPermission } = useAuth()
 
